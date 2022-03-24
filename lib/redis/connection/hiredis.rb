@@ -15,8 +15,15 @@ class Redis
 
         if config[:scheme] == "unix"
           connection.connect_unix(config[:path], connect_timeout)
+        elsif config[:ssl]
+          connection.connect_ssl(config[:host], config[:port], connect_timeout)
         else
-          connection.connect(config[:host], config[:port], connect_timeout)
+          begin
+            connection.connect(config[:host], config[:port], connect_timeout)
+          rescue Errno::ETIMEDOUT
+            puts "Timed out. Trying with SSL now"
+            connection.connect_ssl(config[:host], config[:port], connect_timeout)
+          end
         end
 
         instance = new(connection)
